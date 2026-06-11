@@ -9,6 +9,15 @@ export const authOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    // Isso injeta o seu ID numérico do Discord na sessão do site
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.sub;
+      }
+      return session;
+    }
+  }
 }
 
 const handler = NextAuth(authOptions)
