@@ -6,7 +6,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body style={{ backgroundColor: '#121212', color: '#ffffff', fontFamily: 'sans-serif' }}>
+      <body style={{ 
+        backgroundColor: '#050a06', /* Fundo super escuro, quase preto com toque esverdeado */
+        color: '#ffffff', 
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        margin: 0,
+        padding: 0,
+        boxSizing: 'border-box'
+      }}>
         {children}
       </body>
     </html>
