@@ -5,18 +5,19 @@ import { query } from "../lib/db"
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
-  let balance = 0;
+  let wallet = 0;
+  let bank = 0;
   let dbError = false;
 
   if (session?.user?.id) {
     try {
       const users = await query({
-        query: "SELECT wallet FROM users WHERE user_id = ?",
+        query: "SELECT wallet, bank FROM users WHERE user_id = ?",
         values: [session.user.id]
       });
-      
       if (users && users.length > 0) {
-        balance = users[0].wallet;
+        wallet = users[0].wallet;
+        bank = users[0].bank;
       }
     } catch (error) {
       console.error(error);
@@ -24,82 +25,119 @@ export default async function Home() {
     }
   }
 
+  // Se não estiver logado, mostra a tela de bloqueio moderna
+  if (!session) {
+    return (
+      <main style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
+        <div style={{ textAlign: 'center', maxWidth: '400px', width: '100%' }}>
+          <h1 style={{ color: '#2ecc71', fontSize: '3rem', margin: '0 0 10px 0', letterSpacing: '-1px' }}>Fortuna</h1>
+          <p style={{ color: '#737373', fontSize: '1.1rem', marginBottom: '40px' }}>O seu portal de apostas.</p>
+          <div style={{ padding: '30px', backgroundColor: '#171717', borderRadius: '16px', border: '1px solid #262626' }}>
+            <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '10px' }}>Acesso Restrito</h2>
+            <p style={{ color: '#a3a3a3', marginBottom: '25px', fontSize: '0.95rem' }}>Faça login com o Discord para acessar sua carteira e os jogos.</p>
+            <ClientLoginButton session={session} />
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
+    <main style={{ minHeight: '100vh', backgroundColor: '#050505', color: '#fff', fontFamily: 'system-ui, sans-serif', paddingBottom: '80px' }}>
       
-      {/* CABEÇALHO */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-         <h1 style={{ fontSize: '2.8rem', fontWeight: '800', margin: 0, letterSpacing: '-1px', textShadow: '0 0 30px rgba(46, 204, 113, 0.3)' }}>
-           <span style={{ color: '#2ecc71' }}>Fortuna</span>
-         </h1>
-         <p style={{ color: '#88a08f', fontSize: '1.1rem', margin: '5px 0 0 0', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px' }}>
-           Portal Premium
-         </p>
-      </div>
+      {/* HEADER (Perfil e Logo) */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', backgroundColor: '#0a0a0a', borderBottom: '1px solid #1f1f1f' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src={session.user.image} alt="Avatar" style={{ width: '45px', height: '45px', borderRadius: '12px', border: '2px solid #2ecc71' }} />
+          <div>
+            <h2 style={{ fontSize: '1rem', margin: 0, fontWeight: '600' }}>{session.user.name}</h2>
+            <span style={{ fontSize: '0.75rem', color: '#737373' }}>ID: {session.user.id}</span>
+          </div>
+        </div>
+        <div style={{ color: '#2ecc71', fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '-0.5px' }}>
+          Fortuna
+        </div>
+      </header>
 
-      <div className="glass-panel">
-        {session ? (
-          <>
-            {/* PERFIL LOGADO */}
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-               <img 
-                 src={session.user.image} 
-                 alt="Perfil" 
-                 style={{ borderRadius: '50%', width: '90px', height: '90px', border: '3px solid #166534', boxShadow: '0 0 25px rgba(46, 204, 113, 0.2)' }} 
-               />
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+        
+        {/* CARTEIRA E AÇÕES */}
+        <section style={{ backgroundColor: '#121212', borderRadius: '16px', padding: '20px', border: '1px solid #262626', marginBottom: '25px' }}>
+          <p style={{ color: '#a3a3a3', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 5px 0' }}>Saldo para Apostas</p>
+          <h3 style={{ fontSize: '2.5rem', margin: '0 0 20px 0', fontWeight: '800' }}>
+            <span style={{ color: '#2ecc71' }}>R$</span> {wallet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <button style={{ backgroundColor: '#2ecc71', color: '#000', border: 'none', padding: '14px', borderRadius: '10px', fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer' }}>
+              Depositar Ganhos
+            </button>
+            <button style={{ backgroundColor: '#262626', color: '#fff', border: '1px solid #404040', padding: '14px', borderRadius: '10px', fontSize: '0.95rem', fontWeight: '600', cursor: 'pointer' }}>
+              Sacar
+            </button>
+          </div>
+          <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #262626', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: '#737373', fontSize: '0.9rem' }}>Cofre (Banco):</span>
+            <span style={{ fontWeight: '600' }}>R$ {bank.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+        </section>
+
+        {/* ESTATÍSTICAS (Mock visual para ser integrado depois) */}
+        <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
+          <div style={{ backgroundColor: '#121212', borderRadius: '12px', padding: '15px', border: '1px solid #262626' }}>
+            <p style={{ color: '#737373', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Taxa de Vitória</p>
+            <p style={{ fontSize: '1.4rem', fontWeight: 'bold', margin: 0, color: '#3b82f6' }}>68.5%</p>
+          </div>
+          <div style={{ backgroundColor: '#121212', borderRadius: '12px', padding: '15px', border: '1px solid #262626' }}>
+            <p style={{ color: '#737373', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Lucro Total</p>
+            <p style={{ fontSize: '1.4rem', fontWeight: 'bold', margin: 0, color: '#2ecc71' }}>+ R$ 4.250</p>
+          </div>
+        </section>
+
+        {/* JOGOS DISPONÍVEIS */}
+        <h3 style={{ fontSize: '1.2rem', marginBottom: '15px', color: '#e5e5e5' }}>Jogos Exclusivos</h3>
+        <section style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '30px' }}>
+          
+          {/* AVIATOR */}
+          <div style={{ backgroundColor: '#171717', border: '1px solid #ef4444', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div>
+              <h4 style={{ fontSize: '1.3rem', margin: '0 0 5px 0', color: '#fff' }}>Aviator</h4>
+              <p style={{ color: '#a3a3a3', fontSize: '0.85rem', margin: 0 }}>Multiplique seus ganhos antes de voar.</p>
             </div>
-            <h2 style={{ margin: '15px 0 5px 0', fontSize: '1.5rem', fontWeight: '700' }}>
-              {session.user.name}
-            </h2>
-            <p style={{ color: '#6b7280', margin: 0, fontSize: '0.85rem' }}>ID: {session.user.id}</p>
-
-            {dbError ? (
-              <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '10px', color: '#ef4444', fontSize: '0.9rem' }}>
-                Falha ao sincronizar com o servidor. Por favor, verifique as configurações da base de dados.
-              </div>
-            ) : (
-              <div className="wallet-card">
-                <p style={{ margin: 0, color: '#a7f3d0', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '600' }}>
-                  Saldo Disponível
-                </p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '2.5rem', color: '#ffffff', fontWeight: '800', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-                  R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            )}
-
-            <div style={{ marginTop: '30px' }}>
-              <ClientLoginButton session={session} />
+            <div style={{ width: '50px', height: '50px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5rem', color: '#ef4444' }}>✈️</span>
             </div>
-          </>
-        ) : (
-          <>
-             {/* ÁREA DESLOGADA */}
-             <div style={{ marginBottom: '25px' }}>
-                <div style={{ 
-                  width: '70px', height: '70px', 
-                  background: 'linear-gradient(135deg, rgba(22, 101, 52, 0.5), rgba(10, 46, 22, 0.5))', 
-                  borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  margin: '0 auto',
-                  boxShadow: '0 10px 25px rgba(22, 101, 52, 0.2)',
-                  border: '1px solid rgba(31, 122, 64, 0.5)'
-                }}>
-                  {/* Ícone de Cadeado SVG */}
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                </div>
-             </div>
-             <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', fontWeight: '700' }}>
-               Acesso Restrito
-             </h3>
-             <p style={{ color: '#88a08f', marginBottom: '30px', fontSize: '0.95rem', lineHeight: '1.5' }}>
-               Autentique-se de forma segura para aceder à sua carteira e aos recursos do portal.
-             </p>
-             <ClientLoginButton session={session} />
-          </>
-        )}
+          </div>
+
+          {/* MINES */}
+          <div style={{ backgroundColor: '#171717', border: '1px solid #f59e0b', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div>
+              <h4 style={{ fontSize: '1.3rem', margin: '0 0 5px 0', color: '#fff' }}>Mines</h4>
+              <p style={{ color: '#a3a3a3', fontSize: '0.85rem', margin: 0 }}>Caminhe pelo campo minado com cautela.</p>
+            </div>
+            <div style={{ width: '50px', height: '50px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5rem', color: '#f59e0b' }}>💣</span>
+            </div>
+          </div>
+
+          {/* BLACKJACK */}
+          <div style={{ backgroundColor: '#171717', border: '1px solid #3b82f6', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div>
+              <h4 style={{ fontSize: '1.3rem', margin: '0 0 5px 0', color: '#fff' }}>Blackjack</h4>
+              <p style={{ color: '#a3a3a3', fontSize: '0.85rem', margin: 0 }}>Chegue o mais perto do 21 sem estourar.</p>
+            </div>
+            <div style={{ width: '50px', height: '50px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.5rem', color: '#3b82f6' }}>🃏</span>
+            </div>
+          </div>
+
+        </section>
+
+        {/* LOGOUT AREA */}
+        <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: '20px' }}>
+          <ClientLoginButton session={session} />
+        </div>
+
       </div>
     </main>
   )
